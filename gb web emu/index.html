@@ -4,7 +4,7 @@
   <title>Game Boy Emulator</title>
 </head>
 <body>
-  <h1>Game Boy Emulator</h1>
+  <h1>Game Boy Emulator (Python in Browser)</h1>
   <pre id="output">Loading...</pre>
 
   <script src="https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js"></script>
@@ -16,19 +16,24 @@
       try {
         let pyodide = await loadPyodide();
 
-        // Redirect Python print() to the page
-        pyodide.setStdout({
-          batched: (text) => {
-            output.textContent += text + "\n";
-          }
-        });
+        // Capture Python print()
+        pyodide.runPython(`
+import sys
+class Writer:
+    def write(self, text):
+        from js import document
+        output = document.getElementById("output")
+        output.textContent += text
+sys.stdout = Writer()
+sys.stderr = Writer()
+        `);
 
         const code = await fetch("main.py").then(r => r.text());
 
         await pyodide.runPythonAsync(code);
 
       } catch (err) {
-        output.textContent = "ERROR:\n" + err;
+        output.textContent = "ERROR:\\n" + err;
       }
     }
 
