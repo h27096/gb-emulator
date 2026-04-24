@@ -4,22 +4,31 @@
   <title>Game Boy Emulator</title>
 </head>
 <body>
-  <h1>Game Boy Emulator (Python in Browser)</h1>
-  <pre id="output"></pre>
+  <h1>Game Boy Emulator</h1>
+  <pre id="output">Loading...</pre>
 
   <script src="https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js"></script>
 
   <script>
     async function main() {
-      let pyodide = await loadPyodide();
-
-      const code = await fetch("main.py").then(r => r.text());
+      let output = document.getElementById("output");
 
       try {
-        let result = await pyodide.runPythonAsync(code);
-        document.getElementById("output").textContent = result || "Done";
+        let pyodide = await loadPyodide();
+
+        // Redirect Python print() to the page
+        pyodide.setStdout({
+          batched: (text) => {
+            output.textContent += text + "\n";
+          }
+        });
+
+        const code = await fetch("main.py").then(r => r.text());
+
+        await pyodide.runPythonAsync(code);
+
       } catch (err) {
-        document.getElementById("output").textContent = err;
+        output.textContent = "ERROR:\n" + err;
       }
     }
 
